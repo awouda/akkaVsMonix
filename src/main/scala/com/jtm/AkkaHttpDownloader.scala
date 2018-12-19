@@ -13,16 +13,16 @@ class AkkaHttpDownloader(implicit val sttpBackend: SttpBackend[Future, Source[By
 
   implicit val ec: ExecutionContext = system.dispatcher
 
-  def response = {
+  def response(i:Int) = {
     val response = sttp
-      .post(uri"http://ftp.gnu.org/gnu/a2ps/a2ps-4.12.tar.gz")
+      .get(uri"http://ftp.nluug.nl/os/Linux/distr/archlinux/community/os/x86_64/argyllcms-2.0.1-1-x86_64.pkg.tar.xz")
       .response(asStream[Source[ByteString, Any]])
       .readTimeout(Duration.Inf)
       .send()
 
     response.flatMap { response =>
       response.body match {
-        case Right(src) => handleBuffer(src)
+        case Right(src) => handleBuffer(src).map{ bytes => s"Run # ${i} total bytes (akka) = ${bytes}"}
         case Left(err) => throw new Exception(err)
       }
 
@@ -32,9 +32,8 @@ class AkkaHttpDownloader(implicit val sttpBackend: SttpBackend[Future, Source[By
   private def handleBuffer(source: Source[ByteString, Any]): Future[Int] = {
     implicit val materializer = ActorMaterializer()
     source.runFold(0) { (acc, curr) =>
-      println("Akka got some bytes: "+ curr.size)
       acc + curr.size
-    }
+    }.map{ x => println("akka downloader got all remote bytes "); x}
   }
 
 }

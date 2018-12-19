@@ -10,16 +10,17 @@ import scala.concurrent.duration.Duration
 
 class MonixDownloader(implicit sttpBackend: SttpBackend[Task, Observable[ByteBuffer]] ) {
 
-  def response: Task[String] = {
+  def response(i:Int): Task[String] = {
     val response = sttp
-      .post(uri"http://ftp.gnu.org/gnu/a2ps/a2ps-4.12.tar.gz")
+      .get(uri"http://ftp.nluug.nl/os/Linux/distr/archlinux/community/os/x86_64/argyllcms-2.0.1-1-x86_64.pkg.tar.xz")
       .response(asStream[Observable[ByteBuffer]])
       .readTimeout(Duration.Inf)
       .send()
     response.flatMap { response =>
       response.body match {
         case Right(obs) =>
-          handleBuffer(obs).map { total => s"Total bytes = ${total}" }.firstL.doOnFinish(_ => Task(sttpBackend.close()))
+          handleBuffer(obs).map { total => s"Run # ${i} Total bytes (monix) = ${total}" }.firstL
+//          handleBuffer(obs).map { total => s"Total bytes = ${total}" }.firstL.doOnFinish(_ => Task(sttpBackend.close()))
         case Left(err) => println(err)
           throw new Exception(err)
       }
@@ -29,10 +30,8 @@ class MonixDownloader(implicit sttpBackend: SttpBackend[Task, Observable[ByteBuf
 
   private def handleBuffer(obs: Observable[ByteBuffer]) = {
     obs.foldLeft(0){(acc, cur) =>
-      println("Monix got some bytes: "+cur.array().size)
-
       acc + cur.array().size}
-  }
+  }.doOnNext(_ => Task(println("Monix download got all bytes ")))
 
 
 }

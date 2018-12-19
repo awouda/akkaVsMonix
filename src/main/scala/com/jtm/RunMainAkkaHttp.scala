@@ -19,27 +19,16 @@ class RunMainAkkaHttp extends  {
 
   val downloader = new AkkaHttpDownloader()
 
-//  val result = downloader.response.onComplete{
-//    case Success(response) =>
-//      val took = (System.currentTimeMillis() - start ) / 1000
-//      println(s"$response took $took")
-//      closeStuff()
-//    case Failure(err) => println("got error...")
-//      err.printStackTrace()
-//  }
-
-
-  val result = downloader.response.flatMap{ result =>
+  def result(i:Int) = downloader.response(i).map{ result =>
 
     val took = (System.currentTimeMillis() - start ) / 1000
-    println(s"Akka http result: $result took $took")
-    closeStuff()
+    s"Akka http result run # $i : $result took $took"
   }
 
 
-  private def closeStuff() =   {
-    println("terminating systems...")
-    sttpBackend.close()
+   def close() =   {
+    println("terminating systems (akka)")
+   // sttpBackend.close()
     system.terminate()
 
   }

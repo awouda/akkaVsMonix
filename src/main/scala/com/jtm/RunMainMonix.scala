@@ -16,13 +16,15 @@ class RunMainMonix  {
 
   val downloader = new MonixDownloader()
 
-  val result = downloader.response.doOnFinish(_ => Task(sttpBackend.close())).map{  response =>
+  def result(i:Int) = downloader.response(i).map{  response =>
       val took = (System.currentTimeMillis() - start ) / 1000
-      println(s"$response took $took")
-      "done"
+      s"Monix result run # $i : $response took $took"
   }.runToFuture
 
 
+   def close() = {
+     println("terminating systems (monix)")
+     sttpBackend.close()}
 
 
 
